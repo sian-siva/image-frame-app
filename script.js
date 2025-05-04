@@ -3,6 +3,7 @@ const frameInput = document.getElementById('frameInput');
 const photoInput = document.getElementById('photoInput');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+// Prevent page scrolling when touching the canvas\ ncanvas.style.touchAction = 'none';
 const nextBtn = document.getElementById('nextBtn');
 const prevBtn = document.getElementById('prevBtn');
 const downloadBtn = document.getElementById('downloadBtn');
@@ -19,13 +20,25 @@ let startX = 0;
 let startY = 0;
 let fitMode = 'fit'; // 'fit' or 'cover'
 
-// === Canvas Selection Logic ===
-canvas.addEventListener('mousedown', (e) => {
-  if (!frameImage.src) return;
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+// === Pointer Event Handlers (Mouse & Touch) ===
+canvas.addEventListener('mousedown', onPointerDown);
+canvas.addEventListener('mousemove', onPointerMove);
+canvas.addEventListener('mouseup', onPointerUp);
 
+// === Mobile Touch Support ===
+canvas.addEventListener('touchstart', onPointerDown);
+canvas.addEventListener('touchmove', onPointerMove);
+canvas.addEventListener('touchend', onPointerUp);
+
+function onPointerDown(e) {
+  if (!frameImage.src) return;
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const { clientX, clientY } = e.touches ? e.touches[0] : e;
+  const x = clientX - rect.left;
+  const y = clientY - rect.top;
+
+  // fit/cover switch zone
   if (y > canvas.height - 50) {
     if (x > 20 && x < 80) fitMode = 'fit';
     if (x > 120 && x < 190) fitMode = 'cover';
@@ -36,28 +49,34 @@ canvas.addEventListener('mousedown', (e) => {
   startX = x;
   startY = y;
   isDrawing = true;
-});
+}
 
-canvas.addEventListener('mousemove', (e) => {
+function onPointerMove(e) {
   if (!isDrawing) return;
+  e.preventDefault();
   const rect = canvas.getBoundingClientRect();
-  const currentX = e.clientX - rect.left;
-  const currentY = e.clientY - rect.top;
+  const { clientX, clientY } = e.touches ? e.touches[0] : e;
+  const currentX = clientX - rect.left;
+  const currentY = clientY - rect.top;
   const width = currentX - startX;
   const height = currentY - startY;
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = '#1e90ff';
   ctx.lineWidth = 2;
   ctx.strokeRect(startX, startY, width, height);
   drawFitModeOptions();
-});
+}
 
-canvas.addEventListener('mouseup', (e) => {
+function onPointerUp(e) {
   if (!isDrawing) return;
+  e.preventDefault();
   const rect = canvas.getBoundingClientRect();
-  const endX = e.clientX - rect.left;
-  const endY = e.clientY - rect.top;
+  const touch = e.changedTouches ? e.changedTouches[0] : e;
+  const endX = touch.clientX - rect.left;
+  const endY = touch.clientY - rect.top;
+
   targetArea = {
     x: Math.min(startX, endX),
     y: Math.min(startY, endY),
@@ -66,8 +85,9 @@ canvas.addEventListener('mouseup', (e) => {
   };
   isDrawing = false;
   drawImages();
-});
+}
 
+// === Drawing & Rendering ===
 function drawImages(suppressBox = false) {
   const photo = photoImages[currentIndex];
   if (!frameImage.src) return;
@@ -231,7 +251,7 @@ prevBtn.addEventListener('click', () => {
 // === Download ===
 downloadBtn.addEventListener('click', () => {
   drawImages(true);
-  const link = document.createElement('a');
+  const link = document.createElement('а');
   link.download = `framed-photo-${currentIndex + 1}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
