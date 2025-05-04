@@ -1,82 +1,125 @@
 body {
-    font-family: sans-serif;
-    padding: 20px;
-    background-color: #f0f0f0;
-    text-align: center;
+  font-family: sans-serif;
+  padding: 20px;
+  background-color: #f0f0f0;
+  text-align: center;
+}
+
+.upload-section {
+  margin-bottom: 20px;
+}
+
+canvas {
+  border: 1px solid #ccc;
+  background-color: #fff;
+  max-width: 100%;
+  height: auto;
+  transition: background-color 0.3s ease, outline 0.3s ease;
+  animation: fadeIn 0.4s ease;
+}
+
+canvas.dragover {
+  outline: 3px dashed #1e90ff;
+  background-color: #e0f7ff;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0.3; }
+  to { opacity: 1; }
+}
+
+.preview-thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px auto;
+  max-width: 90%;
+}
+
+.preview-thumbnails img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.preview-thumbnails img.active {
+  border-color: #1e90ff;
+  transform: scale(1.05);
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  margin-top: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+  background-color: #1e90ff;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.nav-buttons {
+  margin-top: 15px;
+}
+
+.nav-buttons button {
+  margin: 0 10px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.download-buttons {
+  margin-top: 15px;
+}
+
+.download-buttons button {
+  margin: 0 10px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+p {
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
   }
-  
-  .upload-section {
-    margin-bottom: 20px;
+
+  h1 {
+    font-size: 20px;
   }
-  
-  canvas {
-    border: 1px solid #ccc;
-    background-color: #fff;
-    max-width: 100%;
-    height: auto;
+
+  p {
+    font-size: 12px;
   }
-  
+
+  .upload-section,
+  .nav-buttons,
+  .download-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
   button {
-    padding: 10px 20px;
-    font-size: 16px;
-    margin-top: 15px;
-    cursor: pointer;
+    width: 100%;
   }
 
-  .nav-buttons {
-    margin-top: 15px;
+  .preview-thumbnails {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
   }
-  
-  .nav-buttons button {
-    margin: 0 10px;
-    padding: 8px 16px;
-    font-size: 14px;
-    cursor: pointer;
-  }
-
-  .download-buttons {
-    margin-top: 15px;
-  }
-  
-  .download-buttons button {
-    margin: 0 10px;
-    padding: 8px 16px;
-    font-size: 14px;
-    cursor: pointer;
-  }
-  
-  p {
-    font-size: 14px;
-    margin-bottom: 20px;
-  }
-
-  @media (max-width: 600px) {
-    body {
-      padding: 10px;
-    }
-  
-    h1 {
-      font-size: 20px;
-    }
-  
-    p {
-      font-size: 12px;
-    }
-  
-    .upload-section,
-    .nav-buttons,
-    .download-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-  
-    button {
-      width: 100%;
-    }
-  }
-  
-    
-  
-    
+}
