@@ -3,7 +3,7 @@ const frameInput = document.getElementById('frameInput');
 const photoInput = document.getElementById('photoInput');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-// Prevent page scrolling when touching the canvas\ ncanvas.style.touchAction = 'none';
+canvas.style.touchAction = 'none'; // Prevent page scrolling when touching the canvas
 const nextBtn = document.getElementById('nextBtn');
 const prevBtn = document.getElementById('prevBtn');
 const downloadBtn = document.getElementById('downloadBtn');
@@ -168,7 +168,7 @@ function highlightActiveThumbnail() {
 
 function updateCounter() {
   photoCounter.textContent = photoImages.length > 0
-    ? `Photo ${currentIndex + 1} of ${photoImages.length}`
+    ? `Photo ${currentIndex + 1} of ${photoImages.length}` 
     : '';
 }
 
@@ -251,7 +251,7 @@ prevBtn.addEventListener('click', () => {
 // === Download ===
 downloadBtn.addEventListener('click', () => {
   drawImages(true);
-  const link = document.createElement('а');
+  const link = document.createElement('a');
   link.download = `framed-photo-${currentIndex + 1}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
