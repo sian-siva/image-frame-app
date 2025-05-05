@@ -1,33 +1,56 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Image Frame App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>Frame + Photo Merger</h1>
 
-  <div class="upload-section">
-    <label>Upload Frame: <input type="file" id="frameInput" accept="image/*"></label>
-    <label>Upload Photos: <input type="file" id="photoInput" accept="image/*" multiple></label>
-  </div>
+  <div class="main-container">
+    <!-- LEFT COLUMN -->
+    <div class="upload-area">
+      <label for="frameInput" class="upload-btn">Upload Frame</label>
+      <input type="file" id="frameInput" accept="image/*" hidden />
 
-  <canvas id="canvas" width="600" height="600"></canvas>
-  <p id="photoCounter"></p>
+      <label for="photoInput" class="upload-btn">Upload Photos</label>
+      <input type="file" id="photoInput" accept="image/*" multiple hidden />
+
+      <p class="instruction">
+        Draw the area for the<br />
+        photo on the frame
+      </p>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="canvas-area">
+      <div class="canvas-view">
+        <span id="prevArrow" class="canvas-arrow">←</span>
+        <canvas id="canvas"></canvas>
+        <span id="nextArrow" class="canvas-arrow">→</span>
+        <div id="photoCounter" class="photo-counter"></div>
+      </div>
+
+      <div class="fit-mode-selector">
+        <select id="fitModeSelect">
+          <option value="fit">Fit</option>
+          <option value="fill">Fill</option>
+          <option value="cover">Crop</option>
+          <option value="tile">Tile</option>
+        </select>
+      </div>
+
+      <div class="download-buttons">
+        <button id="downloadBtn">Download This</button>
+        <button id="downloadAllBtn">Download All</button>
+      </div>
+    </div>
+  </div>
 
   <div class="preview-thumbnails" id="previewThumbnails"></div>
-
-  <div class="nav-buttons">
-    <button id="prevBtn">Previous</button>
-    <button id="nextBtn">Next</button>
-  </div>
-
-  <div class="download-buttons">
-    <button id="downloadBtn">Download This</button>
-    <button id="downloadAllBtn">Download All</button>
-  </div>  
 
   <script src="script.js"></script>
 </body>

@@ -1,93 +1,134 @@
+//Js
+
 // === Core Element References ===
 const frameInput = document.getElementById('frameInput');
 const photoInput = document.getElementById('photoInput');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-canvas.style.touchAction = 'none'; // Prevent page scrolling when touching the canvas
-const nextBtn = document.getElementById('nextBtn');
-const prevBtn = document.getElementById('prevBtn');
+canvas.style.touchAction = 'none';
+const fitModeSelect = document.getElementById('fitModeSelect');
+const prevArrow = document.getElementById('prevArrow');
+const nextArrow = document.getElementById('nextArrow');
 const downloadBtn = document.getElementById('downloadBtn');
 const downloadAllBtn = document.getElementById('downloadAllBtn');
 const photoCounter = document.getElementById('photoCounter');
 const previewContainer = document.getElementById('previewThumbnails');
 
+// State variables
 let frameImage = new Image();
 let photoImages = [];
 let currentIndex = 0;
 let targetArea = null;
 let isDrawing = false;
+let isDraggingPhoto = false;
 let startX = 0;
 let startY = 0;
-let fitMode = 'fit'; // 'fit' or 'cover'
+let dragStart = { x: 0, y: 0 };
+let coverOffset = { x: 0, y: 0 };
+let fitMode = 'fit';
 
-// === Pointer Event Handlers (Mouse & Touch) ===
-canvas.addEventListener('mousedown', onPointerDown);
-canvas.addEventListener('mousemove', onPointerMove);
-canvas.addEventListener('mouseup', onPointerUp);
+// Pointer event handlers
+enablePointerEvents();
 
-// === Mobile Touch Support ===
-canvas.addEventListener('touchstart', onPointerDown);
-canvas.addEventListener('touchmove', onPointerMove);
-canvas.addEventListener('touchend', onPointerUp);
+function enablePointerEvents() {
+  canvas.addEventListener('mousedown', onPointerDown);
+  canvas.addEventListener('mousemove', onPointerMove);
+  canvas.addEventListener('mouseup', onPointerUp);
+  canvas.addEventListener('touchstart', onPointerDown);
+  canvas.addEventListener('touchmove', onPointerMove);
+  canvas.addEventListener('touchend', onPointerUp);
+}
+
+function getPointerPosition(e) {
+  const rect = canvas.getBoundingClientRect();
+  const { clientX, clientY } = e.touches ? e.touches[0] : e;
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY
+  };
+}
 
 function onPointerDown(e) {
   if (!frameImage.src) return;
   e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const { clientX, clientY } = e.touches ? e.touches[0] : e;
-  const x = clientX - rect.left;
-  const y = clientY - rect.top;
+  const pos = getPointerPosition(e);
+  const x = pos.x;
+  const y = pos.y;
 
-  // fit/cover switch zone
-  if (y > canvas.height - 50) {
-    if (x > 20 && x < 80) fitMode = 'fit';
-    if (x > 120 && x < 190) fitMode = 'cover';
+  // If in cover mode and photo loaded inside area, start dragging photo
+  if (fitMode === 'cover' && targetArea && photoImages[currentIndex]) {
+    if (x >= targetArea.x && x <= targetArea.x + targetArea.width &&
+        y >= targetArea.y && y <= targetArea.y + targetArea.height) {
+      isDraggingPhoto = true;
+      dragStart = { x, y };
+      return;
+    }
+  }
+
+  // Else start drawing selection box
+  isDrawing = true;
+  startX = x;
+  startY = y;
+}
+
+function onPointerMove(e) {
+  if (!isDrawing && !isDraggingPhoto) return;
+  e.preventDefault();
+  const pos = getPointerPosition(e);
+  const x = pos.x;
+  const y = pos.y;
+
+  if (isDraggingPhoto) {
+    // Move the crop offset
+    const dx = x - dragStart.x;
+    const dy = y - dragStart.y;
+    coverOffset.x += dx;
+    coverOffset.y += dy;
+    dragStart = { x, y };
     drawImages();
     return;
   }
 
-  startX = x;
-  startY = y;
-  isDrawing = true;
-}
-
-function onPointerMove(e) {
-  if (!isDrawing) return;
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const { clientX, clientY } = e.touches ? e.touches[0] : e;
-  const currentX = clientX - rect.left;
-  const currentY = clientY - rect.top;
-  const width = currentX - startX;
-  const height = currentY - startY;
-
+  // Drawing selection box preview
+  const width = x - startX;
+  const height = y - startY;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = '#1e90ff';
   ctx.lineWidth = 2;
   ctx.strokeRect(startX, startY, width, height);
-  drawFitModeOptions();
 }
 
 function onPointerUp(e) {
+  if (isDraggingPhoto) {
+    isDraggingPhoto = false;
+    return;
+  }
   if (!isDrawing) return;
   e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const touch = e.changedTouches ? e.changedTouches[0] : e;
-  const endX = touch.clientX - rect.left;
-  const endY = touch.clientY - rect.top;
+  const pos = getPointerPosition(e);
+  const endX = pos.x;
+  const endY = pos.y;
 
   targetArea = {
     x: Math.min(startX, endX),
     y: Math.min(startY, endY),
     width: Math.abs(endX - startX),
-    height: Math.abs(endY - startY),
+    height: Math.abs(endY - startY)
   };
   isDrawing = false;
+  // Reset offset when new area selected
+  coverOffset = { x: 0, y: 0 };
   drawImages();
 }
 
-// === Drawing & Rendering ===
+function resizeCanvasToImage(img) {
+  canvas.width = img.width;
+  canvas.height = img.height;
+}
+
 function drawImages(suppressBox = false) {
   const photo = photoImages[currentIndex];
   if (!frameImage.src) return;
@@ -96,30 +137,50 @@ function drawImages(suppressBox = false) {
   ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
 
   if (photo && targetArea) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(targetArea.x, targetArea.y, targetArea.width, targetArea.height);
+    ctx.clip();
+
     const imgW = photo.width;
     const imgH = photo.height;
     const boxW = targetArea.width;
     const boxH = targetArea.height;
 
     if (fitMode === 'fit') {
-      let width = imgW;
-      let height = imgH;
       const scale = Math.min(boxW / imgW, boxH / imgH);
-      width *= scale;
-      height *= scale;
-      const x = targetArea.x + (boxW - width) / 2;
-      const y = targetArea.y + (boxH - height) / 2;
-      ctx.drawImage(photo, x, y, width, height);
-    } else {
+      const w = imgW * scale;
+      const h = imgH * scale;
+      const x = targetArea.x + (boxW - w) / 2;
+      const y = targetArea.y + (boxH - h) / 2;
+      ctx.drawImage(photo, x, y, w, h);
+
+    } else if (fitMode === 'fill') {
       const scale = Math.max(boxW / imgW, boxH / imgH);
-      const drawW = boxW;
-      const drawH = boxH;
+      const w = imgW * scale;
+      const h = imgH * scale;
+      const x = targetArea.x + (boxW - w) / 2;
+      const y = targetArea.y + (boxH - h) / 2;
+      ctx.drawImage(photo, x, y, w, h);
+
+    } else if (fitMode === 'cover') {
+      const scale = Math.max(boxW / imgW, boxH / imgH);
       const cropW = boxW / scale;
       const cropH = boxH / scale;
-      const sx = (imgW - cropW) / 2;
-      const sy = (imgH - cropH) / 2;
-      ctx.drawImage(photo, sx, sy, cropW, cropH, targetArea.x, targetArea.y, drawW, drawH);
+      let sx = (imgW - cropW) / 2 + coverOffset.x;
+      let sy = (imgH - cropH) / 2 + coverOffset.y;
+      sx = Math.max(0, Math.min(sx, imgW - cropW));
+      sy = Math.max(0, Math.min(sy, imgH - cropH));
+      ctx.drawImage(photo, sx, sy, cropW, cropH, targetArea.x, targetArea.y, boxW, boxH);
+
+    } else if (fitMode === 'tile') {
+      for (let yy = targetArea.y; yy < targetArea.y + boxH; yy += imgH) {
+        for (let xx = targetArea.x; xx < targetArea.x + boxW; xx += imgW) {
+          ctx.drawImage(photo, xx, yy, imgW, imgH);
+        }
+      }
     }
+    ctx.restore();
   }
 
   if (targetArea && !suppressBox) {
@@ -127,36 +188,12 @@ function drawImages(suppressBox = false) {
     ctx.lineWidth = 2;
     ctx.strokeRect(targetArea.x, targetArea.y, targetArea.width, targetArea.height);
   }
-
-  drawFitModeOptions();
   highlightActiveThumbnail();
+  updateCounter();
 }
 
-function drawFitModeOptions() {
-  ctx.font = '14px sans-serif';
-  ctx.fillStyle = '#000';
-
-  ctx.beginPath();
-  ctx.arc(30, canvas.height - 35, 6, 0, 2 * Math.PI);
-  ctx.fill();
-  ctx.stroke();
-  if (fitMode === 'fit') {
-    ctx.beginPath();
-    ctx.arc(30, canvas.height - 35, 3, 0, 2 * Math.PI);
-    ctx.fill();
-  }
-  ctx.fillText('Fit', 45, canvas.height - 30);
-
-  ctx.beginPath();
-  ctx.arc(130, canvas.height - 35, 6, 0, 2 * Math.PI);
-  ctx.fill();
-  ctx.stroke();
-  if (fitMode === 'cover') {
-    ctx.beginPath();
-    ctx.arc(130, canvas.height - 35, 3, 0, 2 * Math.PI);
-    ctx.fill();
-  }
-  ctx.fillText('Cover', 145, canvas.height - 30);
+function updateCounter() {
+  photoCounter.textContent = photoImages.length > 0 ? `Photo ${currentIndex + 1} / ${photoImages.length}` : '';
 }
 
 function highlightActiveThumbnail() {
@@ -164,24 +201,6 @@ function highlightActiveThumbnail() {
   thumbs.forEach((thumb, index) => {
     thumb.classList.toggle('active', index === currentIndex);
   });
-}
-
-function updateCounter() {
-  photoCounter.textContent = photoImages.length > 0
-    ? `Photo ${currentIndex + 1} of ${photoImages.length}` 
-    : '';
-}
-
-function updateNavButtons() {
-  prevBtn.disabled = currentIndex === 0;
-  nextBtn.disabled = currentIndex === photoImages.length - 1;
-}
-
-function toggleButtons(show) {
-  downloadBtn.disabled = !show;
-  downloadAllBtn.disabled = !show;
-  nextBtn.disabled = !show;
-  prevBtn.disabled = !show;
 }
 
 function renderPreviews() {
@@ -192,20 +211,19 @@ function renderPreviews() {
     if (index === currentIndex) thumb.classList.add('active');
     thumb.addEventListener('click', () => {
       currentIndex = index;
+      coverOffset = { x: 0, y: 0 };
       drawImages();
-      updateCounter();
-      updateNavButtons();
     });
     previewContainer.appendChild(thumb);
   });
 }
 
-// === Upload Handlers ===
 frameInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const url = URL.createObjectURL(file);
   frameImage.onload = () => {
+    resizeCanvasToImage(frameImage);
     drawImages();
     targetArea = null;
   };
@@ -220,35 +238,36 @@ photoInput.addEventListener('change', (e) => {
   });
   if (photoImages.length > 0) {
     currentIndex = 0;
+    coverOffset = { x: 0, y: 0 };
     photoImages[0].onload = () => {
       drawImages();
-      updateCounter();
-      updateNavButtons();
       renderPreviews();
     };
   }
 });
 
-// === Navigation ===
-nextBtn.addEventListener('click', () => {
-  if (currentIndex < photoImages.length - 1) {
-    currentIndex++;
-    drawImages();
-    updateCounter();
-    updateNavButtons();
-  }
-});
-
-prevBtn.addEventListener('click', () => {
+prevArrow.addEventListener('click', () => {
   if (currentIndex > 0) {
     currentIndex--;
+    coverOffset = { x: 0, y: 0 };
     drawImages();
-    updateCounter();
-    updateNavButtons();
   }
 });
 
-// === Download ===
+nextArrow.addEventListener('click', () => {
+  if (currentIndex < photoImages.length - 1) {
+    currentIndex++;
+    coverOffset = { x: 0, y: 0 };
+    drawImages();
+  }
+});
+
+fitModeSelect.addEventListener('change', (e) => {
+  fitMode = e.target.value;
+  coverOffset = { x: 0, y: 0 };
+  drawImages();
+});
+
 downloadBtn.addEventListener('click', () => {
   drawImages(true);
   const link = document.createElement('a');
@@ -262,18 +281,16 @@ downloadAllBtn.addEventListener('click', () => {
   if (!frameImage.src || photoImages.length === 0) return;
   const originalText = downloadAllBtn.textContent;
   downloadAllBtn.textContent = 'Processing...';
-  toggleButtons(false);
   let i = 0;
+
   function downloadNext() {
     if (i >= photoImages.length) {
       downloadAllBtn.textContent = originalText;
-      toggleButtons(true);
       return;
     }
     currentIndex = i;
+    coverOffset = { x: 0, y: 0 };
     drawImages(true);
-    updateCounter();
-    updateNavButtons();
     setTimeout(() => {
       const link = document.createElement('a');
       link.download = `framed-photo-${i + 1}.png`;
@@ -284,39 +301,4 @@ downloadAllBtn.addEventListener('click', () => {
     }, 500);
   }
   downloadNext();
-});
-
-// === Drag & Drop ===
-canvas.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  canvas.classList.add('dragover');
-});
-
-canvas.addEventListener('dragleave', () => {
-  canvas.classList.remove('dragover');
-});
-
-canvas.addEventListener('drop', (e) => {
-  e.preventDefault();
-  canvas.classList.remove('dragover');
-  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-  if (files.length === 0) return;
-  const frameFile = files[0];
-  const frameUrl = URL.createObjectURL(frameFile);
-  frameImage.onload = drawImages;
-  frameImage.src = frameUrl;
-  photoImages = files.slice(1).map(file => {
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    return img;
-  });
-  if (photoImages.length > 0) {
-    currentIndex = 0;
-    photoImages[0].onload = () => {
-      drawImages();
-      updateCounter();
-      updateNavButtons();
-      renderPreviews();
-    };
-  }
 });

@@ -1,159 +1,163 @@
+
+
+/* Global resets */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: sans-serif;
-  padding: 20px;
-  background-color: #f0f0f0;
+  background: #f9f9f9;
   text-align: center;
+  padding: 40px 0;
 }
 
-.upload-section {
-  margin-bottom: 20px;
+/* Title */
+h1 { margin-bottom: 20px; }
+
+/* Grid container: 35% / 65% */
+.main-container {
+  display: grid !important;
+  grid-template-columns: 35% 65%;
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto 20px;
+  gap: 20px;
 }
 
-canvas {
+/* Upload panel */
+.upload-area {
+  background: #fff;
   border: 1px solid #ccc;
-  background-color: #fff;
+  height: 600px; 
+  border-radius: 4px;
+  padding: 40px 20px;
+}
+.upload-btn {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  margin: 10px auto;
+  padding: 14px 0;
+  font-size: 16px;
+  border: 2px solid #333;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+.instruction {
+  margin-top: 30px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+/* Canvas panel */
+.canvas-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Fixed “view box” */
+.canvas-view {
+  width: 100%;
+  max-width: 800px;   /* adjust as you like */
+  height: 600px;      /* adjust as you like */
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+
+  box-sizing: border-box;
+  padding: 50px;
+}
+.canvas-view canvas {
   max-width: 100%;
-  height: auto;
-  transition: background-color 0.3s ease, outline 0.3s ease;
-  animation: fadeIn 0.4s ease;
+  max-height: 100%;
 }
 
-canvas.dragover {
-  outline: 3px dashed #1e90ff;
-  background-color: #e0f7ff;
+/* Arrows */
+.canvas-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.8);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 32px;
+  cursor: pointer;
+  user-select: none;
+  z-index: 2;
+}
+#prevArrow { left: 10px; }
+#nextArrow { right: 10px; }
+
+/* Counter */
+.photo-counter {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.8);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0.3; }
-  to { opacity: 1; }
+/* Controls */
+.fit-mode-selector {
+  margin-bottom: 12px;
+}
+.fit-mode-selector select {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+.download-buttons {
+  display: flex;
+  gap: 12px;
+}
+.download-buttons button {
+  padding: 8px 16px;
+  font-size: 14px;
+  border: 2px solid #333;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
 }
 
+/* Thumbnails row */
 .preview-thumbnails {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
   gap: 10px;
-  margin: 15px auto;
-  max-width: 90%;
+  justify-content: center;
   overflow-x: auto;
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
 }
-
 .preview-thumbnails img {
   width: 60px;
   height: 60px;
   object-fit: cover;
   border: 2px solid transparent;
+  border-radius: 4px;
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s, border-color 0.2s;
 }
-
 .preview-thumbnails img.active {
   border-color: #1e90ff;
   transform: scale(1.05);
 }
 
-button {
-  padding: 12px 24px;
-  font-size: 16px;
-  margin-top: 15px;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-button:hover {
-  background-color: #1e90ff;
-  color: white;
-  transform: translateY(-1px);
-}
-
-.nav-buttons {
-  margin-top: 15px;
-}
-
-.nav-buttons button {
-  margin: 0 10px;
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.download-buttons {
-  margin-top: 15px;
-}
-
-.download-buttons button {
-  margin: 0 10px;
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-p {
-  font-size: 14px;
-  margin-bottom: 20px;
-}
-
-/* Responsive Breakpoints */
+/* Stack on mobile */
 @media (max-width: 900px) {
-  body {
-    padding: 15px;
+  .main-container {
+    grid-template-columns: 1fr;
   }
-
-  canvas {
-    width: 100%;
-    height: auto;
-  }
-
-  h1 {
-    font-size: 24px;
-  }
-
-  .upload-section,
-  .nav-buttons,
-  .download-buttons {
-    display: block;
-    width: 100%;
-  }
-
-  button {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-
-  .preview-thumbnails {
-    justify-content: flex-start;
-    overflow-x: auto;
-  }
-}
-
-@media (max-width: 600px) {
-  body {
-    padding: 10px;
-  }
-
-  h1 {
-    font-size: 20px;
-  }
-
-  p {
-    font-size: 12px;
-  }
-
-  .upload-section,
-  .nav-buttons,
-  .download-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  button {
-    width: 100%;
-  }
-
-  .preview-thumbnails {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
+  .canvas-view {
+    max-width: 90%;
+    height: 400px;
   }
 }
